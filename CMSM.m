@@ -6,34 +6,41 @@ test_sampleA = fea(9:11,:);
 training_sampleB = fea(12:19,:);
 test_sampleB = fea(20:22,:);
 
+% SVD로 Subspace 생성
 [A_U,A_S,A_V] = svd(training_sampleA,'econ');
 [a_U,a_S,a_V] = svd(test_sampleA,'econ');
 [B_U,B_S,B_V] = svd(training_sampleB,'econ');
 [b_U,b_S,b_V] = svd(test_sampleB,'econ');
 
-proj_A = A_V * A_V'; %training A,training B 로 DS생성
+% different subspace 생성
+proj_A = A_V * A_V';
 proj_B = B_V * B_V';
 
+% P+Q
 temp = proj_A + proj_B;
 tempAB = (temp + temp')/2;
 
 [AB_eigvec, AB_eigval] = eig(tempAB,'vector');
 
+% 1보다 작은 값이 Ds
 D1 = double(find(round(AB_eigval,5)< 1.0));
 difference_subspaceD1 = AB_eigvec(D1,:);
 
 proj_D = difference_subspaceD1' * difference_subspaceD1;
 
+% constraint subspace C에 투영
 proj_Pc = proj_D * training_sampleA';
 proj_Qc = proj_D * training_sampleB';
 proj_testPC = proj_D *test_sampleA';
 proj_testQC = proj_D *test_sampleB';
 
+% 투영된 데이터로 Subspace 다시 계산
 [PC_U,PC_S,PC_V] = svd(proj_Pc,'econ');
 [QC_U,QC_S,QC_V] = svd(proj_Qc,'econ');
 [testPC_U,testPC_S,testPC_V] = svd(proj_testPC,'econ');
 [testQC_U,testQC_S,testQC_V] = svd(proj_testQC,'econ');
 
+% 테스트트
 X = testPC_U' * PC_U;
 [~,X_S,~] = svd(X,'econ');
 S1 = mean(diag(X_S) .^2);
